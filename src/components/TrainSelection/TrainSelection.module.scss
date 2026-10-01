@@ -1,0 +1,14 @@
+@use '../../scss/_mixins';
+
+.trainSelection {
+   margin-bottom: 14rem;
+}
+
+.text {
+   @include mixins.font(
+      var(--fw-4),
+      var(--fs-30),
+      var(--fh-35),
+      var(--color-main-dark)
+   );
+}

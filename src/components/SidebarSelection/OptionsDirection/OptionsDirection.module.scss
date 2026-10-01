@@ -1,0 +1,35 @@
+@use '../SidebarSelection.module.scss';
+@use '../../../scss/mixins';
+.header {
+   @include SidebarSelection.header;
+   display: flex;
+   justify-content: space-between;
+   align-items: baseline;
+
+   .direction {
+      &__text {
+         color: var(--color-main-light);
+         font-weight: var(--fw-7);
+         margin-left: 1.2rem;
+         text-transform: capitalize;
+      }
+   }
+}
+
+.expanded {
+   &__header {
+      @include mixins.font(
+         var(--fw-4),
+         var(--fs-24),
+         var(--fh-28),
+         var(--color-secondary-light)
+      );
+   }
+   &__ret {
+      margin-top: 2rem;
+      .expanded__header {
+         text-align: right;
+      }
+   }
+   padding-bottom: 2rem;
+}

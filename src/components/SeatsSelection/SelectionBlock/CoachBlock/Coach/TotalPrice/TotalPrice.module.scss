@@ -1,0 +1,46 @@
+@use '../../../SelectionBlock.module.scss';
+@use "../../../../../../scss/mixins";
+
+.price {
+   text-align: right;
+   margin-right: 4rem;
+   margin-bottom: 3rem;
+   @include mixins.font(
+      var(--fw-7),
+      var(--fs-24),
+      var(--fh-28),
+      var(--color-yellow-orange)
+   );
+   .total {
+      .currency {
+         margin-left: 1rem;
+      }
+   }
+
+   .text {
+      @include mixins.font(
+         var(--fw-5),
+         var(--fs-21),
+         var(--fh-25),
+         var(--color-main-dark)
+      );
+      margin-bottom: 2rem;
+   }
+   .prompt {
+      @include mixins.font(
+         var(--fw-4),
+         var(--fs-16),
+         var(--fh-19),
+         var(--color-yellow-orange)
+      );
+      margin-top: 1.5rem;
+   }
+   .alert {
+      @include mixins.font(
+         var(--fw-4),
+         var(--fs-16),
+         var(--fh-19),
+         var(--color-error)
+      );
+   }
+}

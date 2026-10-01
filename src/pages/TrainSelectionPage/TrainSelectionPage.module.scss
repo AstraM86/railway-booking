@@ -1,0 +1,7 @@
+@use '../../scss/mixins';
+
+@include mixins.pageLayout;
+.last-tickets {
+   width: 100%;
+   margin-top: 9.5rem;
+}

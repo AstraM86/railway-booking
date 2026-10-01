@@ -1,0 +1,5 @@
+@use '../../scss/mixins';
+
+.about__text-bold {
+   font-weight: var(--fw-7);
+}

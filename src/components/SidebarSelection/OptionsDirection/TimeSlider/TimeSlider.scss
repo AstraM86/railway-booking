@@ -1,0 +1,13 @@
+@use '../../../../scss/mixins';
+
+.time-slider {
+   @include mixins.slider(1.8rem, 1rem);
+}
+
+.ant-slider {
+   @include mixins.hover;
+}
+
+.ant-tooltip {
+   @include mixins.tooltip;
+}

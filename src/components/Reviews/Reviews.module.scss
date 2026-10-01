@@ -1,0 +1,32 @@
+@use '../../scss/mixins';
+.reviews {
+   padding: 15rem 2rem 10rem 13rem;
+   min-width: 100%;
+   max-width: 100%;
+   min-height: 75rem;
+   background: var(--color-main-light);
+   color: var(--color-main-dark);
+   &__title {
+      @include mixins.title;
+   }
+   &__cards {
+      margin-top: 10rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8rem;
+   }
+}
+
+@media only screen and (min-width: 1500px) and (max-width: 1919px) {
+   .reviews {
+      padding-right: 10rem;
+      padding-left: 10rem;
+   }
+}
+
+@media only screen and (min-width: 1920px) {
+   .reviews {
+      padding-left: 25rem;
+      padding-right: 21rem;
+   }
+}

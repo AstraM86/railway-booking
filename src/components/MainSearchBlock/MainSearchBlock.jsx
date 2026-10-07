@@ -15,7 +15,6 @@ import {
 
 import location from './img/location.svg';
 import arrows from './img/arrows.svg';
-import date from './img/date.svg';
 
 import consts from './consts';
 import links from '../../data/links';
@@ -166,9 +165,6 @@ function MainSearchBlock({ width }) {
                         name={consts.depDate}
                         className={depDateClasses}
                      />
-                     <div className={styles.date__icon}>
-                        <img src={date} alt="иконка - календарь" />
-                     </div>
                   </div>
 
                   <div className={styles.date}>
@@ -176,9 +172,6 @@ function MainSearchBlock({ width }) {
                         name={consts.retDate}
                         className={styles.date__input}
                      />
-                     <div className={styles.date__icon}>
-                        <img src={date} alt="иконка - календарь" />
-                     </div>
                   </div>
                </div>
             </div>

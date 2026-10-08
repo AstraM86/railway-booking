@@ -31,6 +31,16 @@
          margin-bottom: 1.5rem;
       }
    }
+
+   :global(.ant-picker-suffix) {
+      position: relative;
+      right: -0.75rem;
+   }
+
+   :global(.ant-picker-clear) {
+      margin-top: 0.75rem;
+      margin-right: -0.75rem;
+   }
 }
 
 @media only screen and (min-width: 1150px) and (max-width: 1400px) {

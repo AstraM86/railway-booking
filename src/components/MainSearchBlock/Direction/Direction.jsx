@@ -18,7 +18,6 @@ import { removeTrainData } from '../../../store/slices/trainSlice';
 
 import consts from '../consts';
 
-import 'antd/dist/antd.css';
 import './Direction.scss';
 
 function Direction({ name, placeholder, className }) {

@@ -16,8 +16,6 @@ import { removeTrainData } from '../../store/slices/trainSlice';
 
 import links from '../../data/links';
 
-import date from './img/date.svg';
-
 import to from './img/to.svg';
 import back from './img/back.svg';
 
@@ -73,17 +71,11 @@ function SidebarSelection() {
 
             <div className={styles.date}>
                <Calendar name={consts.depDate} className={depDateClasses} />
-               <div className={styles.date__icon}>
-                  <img src={date} alt="иконка - календарь" />
-               </div>
             </div>
             <h4 className={inpGrHeaderStyle}> Дата возвращения</h4>
 
             <div className={styles.date}>
                <Calendar name={consts.retDate} className={dateStyle} />
-               <div className={styles.date__icon}>
-                  <img src={date} alt="иконка - календарь" />
-               </div>
             </div>
          </div>
          <div className={styles.section}>

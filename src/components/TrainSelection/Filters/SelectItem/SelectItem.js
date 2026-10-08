@@ -4,7 +4,6 @@ import PropTypes from 'prop-types';
 
 import { selectSort, changeSort } from '../../../../store/slices/sortSlice';
 
-import 'antd/dist/antd.css';
 import './SelectItem.scss';
 
 function SelectItem({ options, onChangeFilters }) {

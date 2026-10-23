@@ -64,7 +64,7 @@ function CoachServiceItem({
 
    return (
       <Tooltip
-         overlayClassName="icons-tooltip"
+         classNames={{ root: 'icons-tooltip' }}
          title={title}
          placement="bottom"
       >

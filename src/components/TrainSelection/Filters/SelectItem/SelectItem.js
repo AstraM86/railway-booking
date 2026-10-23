@@ -15,14 +15,14 @@ function SelectItem({ options, onChangeFilters }) {
    };
    return (
       <div className="select-item">
-         <Select
-            options={options}
-            bordered={false}
-            defaultValue={activeOption}
-            onChange={handleChange}
-            labelInValue
-            popupClassName="filters-select"
-         />
+      <Select
+         options={options}
+         variant="borderless"
+         defaultValue={activeOption}
+         onChange={handleChange}
+         labelInValue
+         classNames={{ popup: { root: 'filters-select' } }}
+      />
       </div>
    );
 }

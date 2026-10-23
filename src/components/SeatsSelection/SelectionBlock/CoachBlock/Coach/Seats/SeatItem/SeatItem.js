@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import PropTypes from 'prop-types';
@@ -9,15 +9,9 @@ import {
    addSelectedSeats,
    removeSelectedSeat,
 } from '../../../../../../../store/slices/seatsSlice';
-import {
-   selectNumberOfPassengers,
-   setNumOfPassengers,
-   selectMaxNumOfAdults,
-   selectMaxNumOfChildren,
-} from '../../../../../../../store/slices/numOfpassengersSlice';
+import { selectNumberOfPassengers } from '../../../../../../../store/slices/numOfpassengersSlice';
 import { removeSeatInfoAfterUnchoosingSeat } from '../../../../../../../store/slices/passengersSlice';
 
-import classes from '../../../../../classes';
 import passengerTypes from '../../../../passengerTypes';
 
 import styles from './SeatItem.module.scss';
@@ -42,119 +36,43 @@ function SeatItem({
    const [open, setOpen] = useState(false);
 
    const numberOfPassengers = useSelector(selectNumberOfPassengers)[direction];
-   const numOfAdults = numberOfPassengers?.adults;
-   const numOfChildren = numberOfPassengers?.children;
-   const maxNumOfAdults = useSelector(selectMaxNumOfAdults);
-   const maxNumOfChildren = useSelector(selectMaxNumOfChildren)[direction];
+   const numOfAdults = numberOfPassengers?.adults || 0;
+   const numOfChildren = numberOfPassengers?.children || 0;
+
+   // Проверяем, все ли места для указанных пассажиров уже выбраны
+   const isMaxReached = numOfAdults <= adultSeats && numOfChildren <= childrenSeats;
+
+   // Синхронизация локального стейта, если место сняли из другого компонента
+   useEffect(() => {
+      setChosen(chosenSeat);
+   }, [chosenSeat]);
 
    let className = `${styles[`seat-${coachClass}`]} ${styles.seat} ${
       taken && styles['seat-taken']
    } ${chosen && styles['seat-chosen']} ${clicked && styles['seat-clicked']}`;
 
-   switch (coachClass) {
-      case classes.first:
-         className += ` ${
-            number % 2 === 1 && styles[`seat-${coachClass}__odd`]
-         } 
-   ${number === 18 && styles[`seat-${coachClass}-last`]} 
-   `;
-         break;
-      case classes.second:
-         className += ` ${
-            number % 4 === 1 && styles[`seat-${coachClass}__bottomLeft`]
-         } 
-     ${number % 4 === 3 && styles[`seat-${coachClass}__bottomRight`]} 
-     ${number % 4 === 2 && styles[`seat-${coachClass}__topLeft`]} 
-     ${number >= 35 && styles[`seat-${coachClass}-last`]}`;
-         break;
-      case classes.third:
-         className += ` ${
-            number % 4 === 1 &&
-            number <= 36 &&
-            styles[`seat-${coachClass}__bottomLeft`]
-         } 
-        ${
-           number % 4 === 3 &&
-           number <= 36 &&
-           styles[`seat-${coachClass}__bottomRight`]
-        } 
-        ${
-           number % 4 === 2 &&
-           number <= 36 &&
-           styles[`seat-${coachClass}__topLeft`]
-        } 
-        ${(number === 35 || number === 36) && styles[`seat-${coachClass}-last`]}
-        ${number > 36 && styles[`seat-${coachClass}-side`]}
-        ${
-           number > 36 &&
-           number % 2 === 0 &&
-           styles[`seat-${coachClass}-side-even`]
-        }
-        ${number === 54 && styles[`seat-${coachClass}-side-even-last`]}`;
-         break;
-      default:
-         className += ` 
-         ${
-            (number === 1 || number === 2) &&
-            styles[`seat-${coachClass}__first`]
-         } 
-         ${number === 37 && styles[`seat-${coachClass}__37`]}
-        ${number === 38 && styles[`seat-${coachClass}__38`]}
-        ${number === 68 && styles[`seat-${coachClass}__68`]}
-        `;
-   }
 
    const seatClickHandler = () => {
-      setOpen(false);
-      setClicked(!clicked);
-      if (!clicked) {
-         setOpen(true);
-      }
+      if (taken) return;
+
       if (chosen) {
+         // Снять выбор
          setChosen(false);
-         setOpen(false);
          setClicked(false);
+         setOpen(false);
          dispatch(removeSelectedSeat({ number, direction, coachId }));
          dispatch(
             removeSeatInfoAfterUnchoosingSeat({ coachId, seatNumber: number })
          );
-         if (numberOfPassengers[typeOfPassenger] >= 1) {
-            dispatch(
-               setNumOfPassengers({
-                  category: typeOfPassenger,
-                  direction,
-                  value: numberOfPassengers[typeOfPassenger] - 1,
-               })
-            );
-         }
+      } else {
+         // Если мест для пассажиров уже достаточно — не открываем поповер
+         if (isMaxReached) return;
+         setClicked(true);
+         setOpen(true);
       }
    };
 
    const typeClickHandler = (evt) => {
-      if (
-         evt.target.id === passengerTypes.adults &&
-         numOfAdults <= adultSeats
-      ) {
-         dispatch(
-            setNumOfPassengers({
-               category: passengerTypes.adults,
-               direction,
-               value: adultSeats + 1,
-            })
-         );
-      }
-      if (
-         evt.target.id === passengerTypes.children &&
-         numOfChildren <= childrenSeats
-      ) {
-         dispatch(
-            setNumOfPassengers({
-               category: passengerTypes.children,
-               direction,
-               value: childrenSeats + 1,
-            })
-         );
-      }
       dispatch(
          addSelectedSeats({
             number,
@@ -172,28 +90,27 @@ function SeatItem({
 
    const popoverContent = (
       <>
-         {maxNumOfAdults > adultSeats && (
+         {numOfAdults > adultSeats && (
             <button
                type="button"
                id={passengerTypes.adults}
                onClick={typeClickHandler}
             >
-               взрослого
+               взрослый
             </button>
          )}
-         {maxNumOfChildren + numOfChildren > childrenSeats && (
+         {numOfChildren > childrenSeats && (
             <button
                type="button"
                id={passengerTypes.children}
                onClick={typeClickHandler}
             >
-               ребенка
+               ребенок
             </button>
          )}
-         {maxNumOfAdults <= adultSeats &&
-            maxNumOfChildren + numOfChildren <= childrenSeats && (
-               <span>вы выбрали максимальное количество мест</span>
-            )}
+         {isMaxReached && (
+            <span>вы выбрали максимальное количество мест</span>
+         )}
       </>
    );
 
@@ -214,9 +131,9 @@ function SeatItem({
       <>
          {!taken && (
             <Popover
-               overlayClassName="seatItem"
+               classNames={{ root: 'seatItem' }}
                placement="top"
-               title="место для"
+               title="Кто поедет на этом месте?"
                trigger="click"
                content={popoverContent}
                open={open}

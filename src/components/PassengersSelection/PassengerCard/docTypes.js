@@ -1,7 +1,7 @@
 const docTypes = {
    passport: 'passport',
    birthCertif: 'birth certificate',
-   passportRus: 'Пасспорт',
+   passportRus: 'Паспорт',
    birthCertifRus: 'Свидетельство о рождении',
 };
 

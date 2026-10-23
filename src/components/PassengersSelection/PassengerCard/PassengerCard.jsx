@@ -3,7 +3,6 @@ import {
    useRef,
    useEffect,
    useCallback,
-   useMemo,
 } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
@@ -66,6 +65,7 @@ function PassengerCard({
    unchosenSeats,
    unchosenSeatsDep,
    unchosenSeatsArr,
+   isLastPassenger = false,
 }) {
    const dispatch = useDispatch();
    const thisPassenger = useSelector(selectPassengers).filter(
@@ -84,6 +84,42 @@ function PassengerCard({
          : docTypes.birthCertif
    );
 
+   // 1. ФИКСИРУЕМ initialValues, чтобы форма не сбрасывалась при сохранении в Redux
+   const [initialValues] = useState(() => {
+      if (thisPassenger.length > 0) {
+         const pas = thisPassenger[0];
+         const vals = {
+            passengerType: pas.passengerType,
+            firstName: pas.firstName,
+            lastName: pas.lastName,
+            fathersName: pas.fathersName,
+            gender: pas.gender,
+            documentType: pas.documentType,
+         };
+         if (pas.specialNeeds) vals.specialNeeds = pas.specialNeeds;
+         if (pas.documentType === docTypes.passport) {
+            vals.documentSerialNumber = pas.documentSerialNumber;
+            vals.documentNumber = pas.documentNumber;
+         }
+         if (pas.documentType === docTypes.birthCertif) {
+            vals.documentNumber = pas.documentNumber;
+         }
+         if (pas.departureOnly) vals.departureOnly = pas.departureOnly;
+         if (pas.dateOfBirth) {
+            const data = pas.dateOfBirth.split('.');
+            vals.dateOfBirth = dayjs(`${data[1]}.${data[0]}.${data[2]}`);
+         }
+         return vals;
+      }
+      return {
+         passengerType,
+         documentType:
+            passengerType === passengerTypes.adults
+               ? docTypes.passport
+               : docTypes.birthCertif,
+      };
+   });
+
    const unchosenSeatsAdults = unchosenSeats.filter(
       (el) => el.priceCoefficient === 1
    ).length;
@@ -92,20 +128,24 @@ function PassengerCard({
    ).length;
 
    const [unchosenSeatsDepSourse, setUnchosenSeatsDepSourse] = useState(
-      unchosenSeatsDep.filter(
-         (el) =>
-            el.priceCoefficient ===
-            (passengerType === passengerTypes.adults ? 1 : 0.5)
-      )
+      passengerType === passengerTypes.toddlers
+         ? []
+         : unchosenSeatsDep.filter(
+              (el) =>
+                 el.priceCoefficient ===
+                 (passengerType === passengerTypes.adults ? 1 : 0.5)
+           )
    );
 
    const [unchosenSeatsArrSourse, setUnchosenSeatsArrSourse] = useState(
-      unchosenSeatsArr.length > 0 &&
-         unchosenSeatsArr.filter(
-            (el) =>
-               el.priceCoefficient ===
-               (passengerType === passengerTypes.adults ? 1 : 0.5)
-         )
+      passengerType === passengerTypes.toddlers
+         ? []
+         : unchosenSeatsArr.length > 0 &&
+              unchosenSeatsArr.filter(
+                 (el) =>
+                    el.priceCoefficient ===
+                    (passengerType === passengerTypes.adults ? 1 : 0.5)
+              )
    );
    const [highAgeError, setHighAgeError] = useState(false);
    const [lowAgeError, setLowAgeError] = useState(false);
@@ -114,28 +154,9 @@ function PassengerCard({
       ? `${styles.passengerCard__bottom} ${styles['passengerCard__bottom-error']}`
       : styles.passengerCard__bottom;
 
-   let initialValues = useMemo(
-      () => ({
-         passengerType,
-         documentType:
-            passengerType === passengerTypes.adults
-               ? docTypes.passport
-               : docTypes.birthCertif,
-      }),
-      [passengerType]
-   );
-
    let seatInfo;
 
    if (thisPassenger.length > 0) {
-      if (
-         unchosenSeats.length === 0 &&
-         !thisPassenger[0].seatArr &&
-         !thisPassenger[0].seatDep
-      ) {
-         clickOnRemovePassHandler(id);
-         dispatch(removePassenger(id));
-      }
       if (thisPassenger[0].seatDep || thisPassenger[0].seatArr) {
          const allCoaches = [
             ...coaches[directions.departure],
@@ -180,37 +201,6 @@ function PassengerCard({
             seatInfo = oneWaySeatInfoMaker(directions.arrival, seatArrData);
          }
       }
-
-      initialValues = {
-         passengerType: thisPassenger[0].passengerType,
-         firstName: thisPassenger[0].firstName,
-         lastName: thisPassenger[0].lastName,
-         fathersName: thisPassenger[0].fathersName,
-         gender: thisPassenger[0].gender,
-         documentType: thisPassenger[0].documentType,
-      };
-
-      if (thisPassenger[0].specialNeeds) {
-         initialValues.specialNeeds = thisPassenger[0].specialNeeds;
-      }
-
-      if (thisPassenger[0].documentType === docTypes.passport) {
-         initialValues.documentSerialNumber =
-            thisPassenger[0].documentSerialNumber;
-         initialValues.documentNumber = thisPassenger[0].documentNumber;
-      }
-      if (thisPassenger[0].documentType === docTypes.birthCertif) {
-         initialValues.documentNumber = thisPassenger[0]?.documentNumber;
-      }
-
-      if (thisPassenger[0].departureOnly) {
-         initialValues.departureOnly = thisPassenger[0].departureOnly;
-      }
-
-      if (thisPassenger[0].dateOfBirth) {
-         const data = thisPassenger[0].dateOfBirth.split('.');
-         initialValues.dateOfBirth = dayjs(`${data[1]}.${data[0]}.${data[2]}`);
-      }
    }
 
    const seatsFilter = useCallback(
@@ -231,11 +221,9 @@ function PassengerCard({
       if (thisPassenger[0]?.documentType) {
          if (thisPassenger[0]?.documentType === docTypes.birthCertif) {
             setDocumentType(docTypes.birthCertif);
-
             seatsFilter(0.5);
          } else {
             setDocumentType(docTypes.passport);
-
             seatsFilter(1);
          }
       }
@@ -254,15 +242,19 @@ function PassengerCard({
       title.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
    }, []);
 
-   const dispatchMaker = (data, direct, idToSend = null) =>
+
+   const dispatchMaker = (data, direct, idToSend = null) => {
+      if (!data || typeof data !== 'string') return;
+      const [coachId, seatNum] = data.split(':');
       dispatch(
          addPassengerId({
-            seat: Number(data.split(':')[1]),
+            seat: Number(seatNum),
             direction: direct,
-            coachId: data.split(':')[0],
+            coachId,
             passengerId: idToSend,
          })
       );
+   };
 
    const clickOnHeaderHandler = () => {
       setExpanded(!expanded);
@@ -300,85 +292,61 @@ function PassengerCard({
    };
 
    const onFinish = (values) => {
-      if (!thisPassenger[0] && !disabledForwardBtn) {
-         setHighAgeError(false);
-         setLowAgeError(false);
-         if (values.seatDep) {
-            dispatchMaker(values.seatDep, directions.departure, id);
-         }
-         if (values.seatArr) {
-            dispatchMaker(values.seatArr, directions.arrival, id);
-         }
+      if (values.seatDep) {
+         dispatchMaker(values.seatDep, directions.departure, id);
+      }
+      if (values.seatArr) {
+         dispatchMaker(values.seatArr, directions.arrival, id);
+      }
 
+      if (!thisPassenger[0]) {
          dispatch(
             addNewPassenger({
                id,
                ...values,
-               [fieldNames.dateOfBirth]:
-                  values[fieldNames.dateOfBirth].format('DD.MM.YYYY'),
+               [fieldNames.dateOfBirth]: values[
+                  fieldNames.dateOfBirth
+               ]?.format('DD.MM.YYYY'),
             })
          );
-
-         if (
-            unchosenSeatsDep.length - (values.seatDep ? 1 : 0) > 0 ||
-            unchosenSeatsArr.length - (values.seatArr ? 1 : 0) > 0
-         ) {
-            clickOnNextPassHandler(id);
-         }
-      } else if (
-         thisPassenger.length > 0 &&
-         !thisPassenger[0]?.seatDep &&
-         !thisPassenger[0]?.seatArr &&
-         !disabledForwardBtn
-      ) {
-         if (values.seatDep) {
-            dispatchMaker(values.seatDep, directions.departure, id);
-         }
-         if (values.seatArr) {
-            dispatchMaker(values.seatArr, directions.arrival, id);
-         }
-         dispatch(
-            editPassengerData({
-               id,
-               ...values,
-               [fieldNames.dateOfBirth]:
-                  values[fieldNames.dateOfBirth].format('DD.MM.YYYY'),
-            })
-         );
-         if (
-            unchosenSeatsDep.length - (values.seatDep ? 1 : 0) > 0 ||
-            unchosenSeatsArr.length - (values.seatArr ? 1 : 0) > 0
-         ) {
-            clickOnNextPassHandler(id);
-         }
       } else {
          dispatch(
             editPassengerData({
                id,
                ...values,
-               [fieldNames.dateOfBirth]:
-                  values[fieldNames.dateOfBirth].format('DD.MM.YYYY'),
+               [fieldNames.dateOfBirth]: values[
+                  fieldNames.dateOfBirth
+               ]?.format('DD.MM.YYYY'),
             })
          );
       }
+
+      // Скролл к следующему пассажиру
+      if (!isLastPassenger) {
+         clickOnNextPassHandler(id);
+      }
    };
 
-   const fieldChangeHandler = (value) => {
-      if (value[fieldNames.passengerType]) {
+   const fieldChangeHandler = (changedValues, allValues) => {
+      // Смена типа пассажира
+      if (changedValues[fieldNames.passengerType]) {
          const doc =
-            value.passengerType === passengerTypes.adults
+            changedValues.passengerType === passengerTypes.adults
                ? docTypes.passport
                : docTypes.birthCertif;
          form.setFieldValue('documentType', doc);
          setDocumentType(doc);
          seatsFilter(
-            Object.entries(value)[0][1] === passengerTypes.adults ? 1 : 0.5
+            changedValues.passengerType === passengerTypes.adults ? 1 : 0.5
          );
       }
-      if (value[fieldNames.docType]) {
-         setDocumentType(value[fieldNames.docType]);
+
+      // Смена типа документа
+      if (changedValues[fieldNames.docType]) {
+         setDocumentType(changedValues[fieldNames.docType]);
       }
 
+      // Сброс ошибок
       setTimeout(() => {
          if (
             form.getFieldsError().filter((item) => item.errors.length > 0)
@@ -388,8 +356,9 @@ function PassengerCard({
          }
       }, 10);
 
-      if (Object.entries(value)[0][0] === fieldNames.depOnly) {
-         setDepartureOnly(Object.entries(value)[0][1]);
+      // Галочка «только туда»
+      if (fieldNames.depOnly in changedValues) {
+         setDepartureOnly(changedValues[fieldNames.depOnly]);
 
          if (form.getFieldValue(fieldNames.seatArr)) {
             dispatchMaker(
@@ -400,24 +369,22 @@ function PassengerCard({
          }
       }
 
+      // Проверки по возрасту
+      const dob = form.getFieldValue(fieldNames.dateOfBirth);
       if (
-         (value.passengerType || value.dateOfBirth) &&
+         dob &&
+         (changedValues.passengerType || changedValues.dateOfBirth) &&
          thisPassenger.length <= 0
       ) {
          setHighAgeError(false);
          setLowAgeError(false);
          setDisabledForwardBtn(false);
 
-         const ageYears = dayjs().diff(
-            form.getFieldValue(fieldNames.dateOfBirth),
-            'years'
-         );
-         const ageChosen =
-            dayjs().diff(form.getFieldValue(fieldNames.dateOfBirth), 'days') >=
-            1;
+         const ageYears = dayjs().diff(dob, 'years');
+         const ageChosen = dayjs().diff(dob, 'days') >= 1;
 
-         if (ageChosen) {
-            const pasType = form.getFieldValue(fieldNames.passengerType);
+         const pasType = form.getFieldValue(fieldNames.passengerType);
+         if (ageChosen && pasType !== passengerTypes.toddlers) {
             if (ageYears < 10 && pasType === passengerTypes.adults) {
                setLowAgeError(true);
                form.setFieldValue(
@@ -451,6 +418,77 @@ function PassengerCard({
             }
          }
       }
+
+      // АВТОСОХРАНЕНИЕ пассажира в Redux
+      const requiredFields = [
+         fieldNames.passengerType,
+         fieldNames.lastName,
+         fieldNames.firstName,
+         fieldNames.fathersName,
+         fieldNames.gender,
+         fieldNames.dateOfBirth,
+         fieldNames.docType,
+      ];
+
+      if (allValues[fieldNames.docType] === docTypes.passport) {
+         requiredFields.push(
+            fieldNames.docSerialNumber,
+            fieldNames.docNumberPass
+         );
+      } else if (allValues[fieldNames.docType] === docTypes.birthCertif) {
+         requiredFields.push(fieldNames.docNumberSertif);
+      }
+
+      let hasAllRequired = requiredFields.every(
+         (f) =>
+            allValues[f] !== undefined &&
+            allValues[f] !== null &&
+            allValues[f] !== ''
+      );
+
+      // Не сохраняем, пока не выбраны места (если это не ребёнок без места)
+      if (passengerType !== passengerTypes.toddlers) {
+         if (unchosenSeatsDepSourse.length > 0 && !allValues[fieldNames.seatDep]) {
+            hasAllRequired = false;
+         }
+         if (unchosenSeatsArrSourse.length > 0 && !departureOnly && !allValues[fieldNames.seatArr]) {
+            hasAllRequired = false;
+         }
+      }
+
+      if (hasAllRequired) {
+         const dateValue = allValues[fieldNames.dateOfBirth];
+         const dateStr = dateValue?.format
+            ? dateValue.format('DD.MM.YYYY')
+            : dateValue;
+
+         const formattedValues = {
+            ...allValues,
+            [fieldNames.dateOfBirth]: dateStr,
+         };
+
+         if (thisPassenger[0]) {
+            dispatch(editPassengerData({ id, ...formattedValues }));
+         } else {
+            dispatch(addNewPassenger({ id, ...formattedValues }));
+         }
+      }
+
+      // АВТОПРИВЯЗКА мест к пассажиру
+      if (changedValues[fieldNames.seatDep]) {
+         dispatchMaker(
+            changedValues[fieldNames.seatDep],
+            directions.departure,
+            id
+         );
+      }
+      if (changedValues[fieldNames.seatArr]) {
+         dispatchMaker(
+            changedValues[fieldNames.seatArr],
+            directions.arrival,
+            id
+         );
+      }
    };
 
    const alertMaker = (age) => (
@@ -476,6 +514,18 @@ function PassengerCard({
       </button>
    );
 
+   const passTypeOptions = [
+      ...(unchosenSeatsAdults > 0 || thisPassenger[0]?.passengerType === passengerTypes.adults
+         ? [{ value: passengerTypes.adults, label: pasTypesRus[passengerTypes.adults] }]
+         : []),
+      ...(unchosenSeatsChildren > 0 || thisPassenger[0]?.passengerType === passengerTypes.children
+         ? [{ value: passengerTypes.children, label: pasTypesRus[passengerTypes.children] }]
+         : []),
+      ...(passengerType === passengerTypes.toddlers || thisPassenger[0]?.passengerType === passengerTypes.toddlers
+         ? [{ value: passengerTypes.toddlers, label: 'Ребёнок без места' }]
+         : []),
+   ];
+
    const passType = (
       <Form.Item
          name={fieldNames.passengerType}
@@ -484,19 +534,9 @@ function PassengerCard({
       >
          <Select
             className="passengerCard-select"
-            popupClassName="passengerCard-select"
-         >
-            {unchosenSeatsAdults && (
-               <Select.Option value={passengerTypes.adults}>
-                  {pasTypesRus[passengerTypes.adults]}
-               </Select.Option>
-            )}
-            {unchosenSeatsChildren && (
-               <Select.Option value={passengerTypes.children}>
-                  {pasTypesRus[passengerTypes.children]}
-               </Select.Option>
-            )}
-         </Select>
+            classNames={{ popup: { root: 'passengerCard-select' } }}
+            options={passTypeOptions}
+         />
       </Form.Item>
    );
 
@@ -506,13 +546,11 @@ function PassengerCard({
             ? pasTypesRus[passengerTypes.adults]
             : thisPassenger[0]?.passengerType === passengerTypes.children
             ? pasTypesRus[passengerTypes.children]
+            : thisPassenger[0]?.passengerType === passengerTypes.toddlers
+            ? 'Ребёнок без места'
             : 'Тип неопределен'}
       </div>
    );
-
-   const onChangeFullName = (evt) => {
-      form.setFieldValue(evt.target.id, evt.target.value.toLowerCase());
-   };
 
    const fullNameInputFields = (
       <>
@@ -520,7 +558,7 @@ function PassengerCard({
             name={fieldNames.lastName}
             label={fieldNames.lastNameLabel}
             rules={rules.lastName}
-            onChange={onChangeFullName}
+            normalize={(value) => value?.toLowerCase()}
          >
             <Input
                className={`${styles.inputField} passengerCard-input`}
@@ -531,7 +569,7 @@ function PassengerCard({
             name={fieldNames.firstName}
             label={fieldNames.firstNameLabel}
             rules={rules.firstName}
-            onChange={onChangeFullName}
+            normalize={(value) => value?.toLowerCase()}
          >
             <Input
                className={`${styles.inputField} passengerCard-input`}
@@ -542,7 +580,7 @@ function PassengerCard({
             name={fieldNames.fathersName}
             label={fieldNames.fathersNameLabel}
             rules={rules.fathersName}
-            onChange={onChangeFullName}
+            normalize={(value) => value?.toLowerCase()}
          >
             <Input
                className={`${styles.inputField} passengerCard-input`}
@@ -581,13 +619,13 @@ function PassengerCard({
             value={form.dateOfBirth}
          >
             <DatePicker
-               className="passengerCard-datepicker"
-               popupClassName="passengerCard-datepicker"
-               placeholder="дд/мм/гг"
-               disabledDate={disabledDate}
-               format="DD.MM.YYYY"
-               allowClear
-               showToday={false}
+              className="passengerCard-datepicker"
+              classNames={{ popup: { root: 'passengerCard-datepicker' } }}
+              placeholder="дд.мм.гггг"
+              disabledDate={disabledDate}
+              format={{ format: 'DD.MM.YYYY', type: 'mask' }} // <-- Маска включена
+              allowClear
+              showToday={false}
             />
          </Form.Item>
       </ConfigProvider>
@@ -601,6 +639,17 @@ function PassengerCard({
       </Form.Item>
    );
 
+   const docTypeOptions = [
+      ...(dayjs().diff(
+         form.getFieldValue(fieldNames.dateOfBirth),
+         'years'
+      ) >= 14 ||
+      dayjs().diff(form.getFieldValue(fieldNames.dateOfBirth), 'days') <= 0
+         ? [{ value: docTypes.passport, label: docTypes.passportRus }]
+         : []),
+      { value: docTypes.birthCertif, label: docTypes.birthCertifRus },
+   ];
+
    const docTypeSelect = (
       <Form.Item
          label={fieldNames.docTypeLabel}
@@ -610,26 +659,10 @@ function PassengerCard({
       >
          <Select
             className={docTypeselectClasses}
-            popupClassName="passengerCard-doc-select"
-            showArrow
+            classNames={{ popup: { root: 'passengerCard-doc-select' } }}
             allowClear={false}
-         >
-            {(dayjs().diff(
-               form.getFieldValue(fieldNames.dateOfBirth),
-               'years'
-            ) >= 14 ||
-               dayjs().diff(
-                  form.getFieldValue(fieldNames.dateOfBirth),
-                  'days'
-               ) <= 0) && (
-               <Select.Option value={docTypes.passport}>
-                  {docTypes.passportRus}
-               </Select.Option>
-            )}
-            <Select.Option value={docTypes.birthCertif}>
-               {docTypes.birthCertifRus}
-            </Select.Option>
-         </Select>
+            options={docTypeOptions}
+         />
       </Form.Item>
    );
 
@@ -686,18 +719,12 @@ function PassengerCard({
       >
          <Select
             className="passengerCard-seat-select"
-            showArrow
             allowClear={false}
-         >
-            {unchosenSeatsDepSourse?.map((item) => (
-               <Select.Option
-                  key={`${item.coachId}:${item.seat}`}
-                  value={`${item.coachId}:${item.seat}`}
-               >
-                  {` Вагон: ${item.coachName}, место: ${item.seat}`}
-               </Select.Option>
-            ))}
-         </Select>
+            options={unchosenSeatsDepSourse?.map((item) => ({
+               value: `${item.coachId}:${item.seat}`,
+               label: `Вагон: ${item.coachName}, место: ${item.seat}`,
+            }))}
+         />
       </Form.Item>
    );
 
@@ -722,19 +749,12 @@ function PassengerCard({
          {unchosenSeatsArrSourse.length > 0 && (
             <Select
                className="passengerCard-seat-select"
-               showArrow
                allowClear={false}
-            >
-               {unchosenSeatsArrSourse.length > 0 &&
-                  unchosenSeatsArrSourse?.map((item) => (
-                     <Select.Option
-                        key={`${item.coachId}:${item.seat}`}
-                        value={`${item.coachId}:${item.seat}`}
-                     >
-                        {` Вагон: ${item.coachName}, место: ${item.seat}`}
-                     </Select.Option>
-                  ))}
-            </Select>
+               options={unchosenSeatsArrSourse?.map((item) => ({
+                  value: `${item.coachId}:${item.seat}`,
+                  label: `Вагон: ${item.coachName}, место: ${item.seat}`,
+               }))}
+            />
          )}
       </Form.Item>
    );
@@ -772,31 +792,46 @@ function PassengerCard({
    );
 
    useEffect(() => {
+      if (passengerType === passengerTypes.toddlers) {
+         setDisabledForwardBtn(false);
+         return;
+      }
       if (
-         !thisPassenger.length > 0 &&
-         !unchosenSeatsDepSourse.length > 0 &&
-         !unchosenSeatsArrSourse.length > 0
+         thisPassenger.length === 0 &&
+         unchosenSeatsDepSourse.length === 0 &&
+         unchosenSeatsArrSourse.length === 0
       ) {
          setDisabledForwardBtn(true);
+      } else {
+         setDisabledForwardBtn(false);
       }
    }, [
       thisPassenger.length,
       unchosenSeatsArrSourse.length,
       unchosenSeatsDepSourse.length,
+      passengerType,
    ]);
 
    const seatSelBlock = (
       <div className={`${styles.row} ${styles.rowSeats}`}>
-         {((!thisPassenger.length > 0 &&
+         {((thisPassenger.length === 0 &&
             (unchosenSeatsDepSourse.length > 0 ||
                unchosenSeatsArrSourse.length > 0)) ||
             (thisPassenger.length > 0 &&
                !thisPassenger[0].seatDep &&
                !thisPassenger[0].seatArr)) &&
+            passengerType !== passengerTypes.toddlers &&
             seatSelection}
-         {!thisPassenger.length > 0 &&
-            !unchosenSeatsDepSourse.length > 0 &&
-            !unchosenSeatsArrSourse.length > 0 &&
+         {passengerType === passengerTypes.toddlers && (
+            <div>
+               Ребёнок без места едет вместе с взрослым пассажиром. Выбирать
+               место для него не нужно.
+            </div>
+         )}
+         {thisPassenger.length === 0 &&
+            unchosenSeatsDepSourse.length === 0 &&
+            unchosenSeatsArrSourse.length === 0 &&
+            passengerType !== passengerTypes.toddlers &&
             needMoreSeatsText}
          {thisPassenger.length > 0 &&
             (thisPassenger[0].seatDep || thisPassenger[0].seatArr) && (
@@ -804,6 +839,8 @@ function PassengerCard({
             )}
       </div>
    );
+
+   const buttonLabel = isLastPassenger ? 'Готово' : 'Следующий пассажир';
 
    const button = (
       <Form.Item className={bottomSectionStyles}>
@@ -814,12 +851,12 @@ function PassengerCard({
                className="passengerCard__button"
                disabled={disabledForwardBtn}
             >
-               Следующий пассажир
+               {buttonLabel}
             </Button>
          )}
          {thisPassenger[0] && (
             <button type="submit" className={styles.changeButton}>
-               Изменить
+               Сохранить изменения
             </button>
          )}
       </Form.Item>
@@ -905,10 +942,12 @@ PassengerCard.propTypes = {
    unchosenSeats: PropTypes.arrayOf(PropTypes.shape(shapedObj)).isRequired,
    unchosenSeatsDep: PropTypes.arrayOf(PropTypes.shape(shapedObj)).isRequired,
    unchosenSeatsArr: PropTypes.arrayOf(PropTypes.shape(shapedObj)),
+   isLastPassenger: PropTypes.bool,
 };
 
 PassengerCard.defaultProps = {
    unchosenSeatsArr: null,
+   isLastPassenger: false,
 };
 
 export default PassengerCard;

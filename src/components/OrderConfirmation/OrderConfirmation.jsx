@@ -13,10 +13,7 @@ import { selectTrainsOptions } from '../../store/slices/trainsSlice';
 import { selectIndex, selectTrains } from '../../store/slices/trainSlice';
 import { selectPersonalData } from '../../store/slices/personalDataSlice';
 import { selectSelectedSeats } from '../../store/slices/seatsSlice';
-import {
-   selectPassengers,
-   removePassenger,
-} from '../../store/slices/passengersSlice';
+import { selectPassengers } from '../../store/slices/passengersSlice';
 import {
    selectResponse,
    selectLoading,
@@ -55,8 +52,8 @@ function OrderConfirmation() {
    const dispatch = useDispatch();
    const selectedTrainIndex = useSelector(selectIndex);
    const trains = useSelector(selectTrains);
-   const seatsDep = useSelector(selectSelectedSeats)[directions.departure];
-   const seatsArr = useSelector(selectSelectedSeats)[directions.arrival];
+   const seatsDep = useSelector(selectSelectedSeats)[directions.departure] || [];
+   const seatsArr = useSelector(selectSelectedSeats)[directions.arrival] || [];
    const passengers = useSelector(selectPassengers);
    const personalData = useSelector(selectPersonalData);
    const paymentOption = personalData[fieldNames.paymentMethod];
@@ -70,15 +67,6 @@ function OrderConfirmation() {
       calculateSum(seatsDep, 0.5) +
       calculateSum(seatsArr, 1) +
       calculateSum(seatsArr, 0.5);
-
-   useEffect(() => {
-      const pasWithoutSeats = passengers.filter(
-         (pas) => !pas[pasFieldNames.seatDep] && !pas[pasFieldNames.seatArr]
-      );
-      if (pasWithoutSeats.length >= 1) {
-         pasWithoutSeats.forEach((pas) => dispatch(removePassenger(pas.id)));
-      }
-   }, [dispatch, passengers]);
 
    const onEditBtnClick = (link) => {
       navigate(link);

@@ -27,19 +27,22 @@ function SeatsSelection() {
    const selectedSeats = useSelector(selectSelectedSeats);
    const numberOfPassengers = useSelector(selectNumberOfPassengers);
 
-   const seatsDep = selectedSeats[directions.departure]
-      ?.map((el) => el.seats)
-      .flat()?.length;
-   const passDep = Object.entries(
-      numberOfPassengers[directions.departure]
-   )?.reduce((curNumber, item) => curNumber + item[1], 0);
+   // Сколько мест выбрано
+   const seatsDep =
+      selectedSeats[directions.departure]
+         ?.map((el) => el.seats)
+         .flat()?.length ?? 0;
+   const seatsArr =
+      selectedSeats[directions.arrival]
+         ?.map((el) => el.seats)
+         ?.flat()?.length ?? 0;
 
-   const seatsArr = selectedSeats[directions.arrival]
-      ?.map((el) => el.seats)
-      ?.flat()?.length;
-   const passArr = Object.entries(
-      numberOfPassengers[directions.arrival]
-   )?.reduce((curNumber, item) => curNumber + item[1], 0);
+   const passDep =
+      (numberOfPassengers[directions.departure]?.adults || 0) +
+      (numberOfPassengers[directions.departure]?.children || 0);
+   const passArr =
+      (numberOfPassengers[directions.arrival]?.adults || 0) +
+      (numberOfPassengers[directions.arrival]?.children || 0);
 
    useEffect(() => {
       if (!arrival) {
@@ -48,18 +51,14 @@ function SeatsSelection() {
    }, [arrival, dispatch]);
 
    useEffect(() => {
-      if (
-         seatsDep !== 0 &&
-         passDep !== 0 &&
-         (!arrival || (seatsArr !== 0 && passArr !== 0))
-      ) {
-         if (seatsDep === passDep && (!arrival || seatsArr === passArr)) {
-            setDisabled(false);
-         } else {
-            setDisabled(true);
-         }
-      }
-   }, [disabled, seatsDep, passDep, seatsArr, passArr, arrival]);
+      // Туда: мест должно быть столько же, сколько пассажиров с местами
+      const departureValid = seatsDep > 0 && seatsDep === passDep;
+
+      // Обратно: проверяем только если направление «обратно» выбрано
+      const arrivalValid = !arrival || (seatsArr > 0 && seatsArr === passArr);
+
+      setDisabled(!(departureValid && arrivalValid));
+   }, [seatsDep, passDep, seatsArr, passArr, arrival]);
 
    const clickHandler = () => {
       navigate(links.passengers);

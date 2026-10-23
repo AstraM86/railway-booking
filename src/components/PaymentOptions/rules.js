@@ -33,7 +33,7 @@ const rules = {
    phone: [
       {
          required: true,
-         message: 'Введите номер в формате 912345678',
+         message: 'Введите номер в формате 9123453535',
          type: 'number',
          min: 9111111111,
          max: 9999999999,

@@ -1,32 +1,72 @@
 @use '../../../../SelectionBlock.module.scss';
-@use "../../../../../../../scss/mixins";
+@use '../../../../../../../scss/mixins';
 
-.seatItem .ant-popover {
-   &-title {
+.seatItem {
+   .ant-popover-title {
       text-align: center;
+      padding: 1.6rem 2rem 1rem;
+      margin-bottom: 0;
+      background-color: var(--color-tickets);
+      border-radius: 1rem 1rem 0 0;
+      @include mixins.font(
+         var(--fw-7),
+         var(--fs-18),
+         var(--fh-22),
+         var(--color-main-dark)
+      );
    }
 
-   &-inner {
-      border-radius: 0.5rem;
+   .ant-popover-inner {
+      border-radius: 1rem;
+      min-width: 32rem;
+      background-color: var(--color-main-light) !important;
+      padding: 1.5rem 2rem 2rem !important;
+      display: flex !important;
+      flex-wrap: wrap !important;
+      justify-content: center !important;
+      gap: 1.5rem !important;
+   }
+
+   .ant-popover-inner-content,
+   .ant-popover-content,
+   .ant-popover-content-wrapper {
+      background-color: transparent !important;
+      padding: 0 !important;
+      display: contents !important;
+   }
+
+   button {
+      flex: 1 1 auto;
+      min-width: 12rem;
+      padding: 1.4rem 1.6rem !important;
+      border: none !important;
+      border-radius: 0.6rem !important;
+      background-color: var(--color-yellow-orange) !important;
+      color: var(--color-main-dark) !important;
+      cursor: pointer !important;
+      text-transform: uppercase !important;
+      box-shadow: none !important;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
       @include mixins.font(
-         var(--fw-4),
-         var(--fs-16),
-         var(--fh-19),
-         var(--color-black)
+         var(--fw-7),
+         var(--fs-18),
+         var(--fh-22),
+         var(--color-main-dark)
       );
-      &-content {
-         background: var(--color-popover);
-         box-shadow: var(--box-shadow-popover);
-         display: flex;
-         justify-content: space-between;
-         & button {
-            padding: 1rem;
-            border: 0.1rem solid var(--color-bars-light);
-            border-radius: 0.5rem;
-            &:last-child {
-               margin-left: 1rem;
-            }
-         }
+
+      &:hover {
+         transform: translateY(-2px);
+         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2) !important;
       }
+
+      &:active {
+         transform: translateY(0);
+      }
+   }
+
+   .ant-popover-arrow::before,
+   .ant-popover-arrow::after,
+   .ant-popover-arrow-content {
+      background-color: var(--color-yellow-orange) !important;
    }
 }
